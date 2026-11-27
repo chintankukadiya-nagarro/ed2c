@@ -3,8 +3,8 @@ import { BRAND_KEYS, isBrandKey, type BrandKey } from "@ed2c/brands";
 import { safeReturnPath } from "./paths";
 import { randomNonce, readSignedToken, signToken } from "./token";
 
-/** Seconds a handoff link stays valid. It is used by a redirect, so it only needs a moment. */
-export const HANDOFF_TTL_SECONDS = 60;
+/** Seconds a handoff link stays valid. Oxygen login on a new host can take longer than a click. */
+export const HANDOFF_TTL_SECONDS = 900;
 
 /**
  * Moves a shopper from one brand site to another. The token carries the shared
@@ -94,7 +94,7 @@ function parseClaims(value: unknown): HandoffClaims | null {
 }
 
 function isCartId(value: unknown): value is string {
-  return typeof value === "string" && /^gid:\/\/shopify\/Cart\/[A-Za-z0-9_?=&.-]{1,512}$/.test(value);
+  return typeof value === "string" && /^gid:\/\/shopify\/Cart\/[A-Za-z0-9_+/=?&.%-]{1,512}$/.test(value);
 }
 
 /** Sites a shopper can switch to from `current`, in display order. */

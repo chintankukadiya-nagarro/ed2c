@@ -66,8 +66,8 @@ export function createCartStorefrontClient(
   cache: CacheInstance,
   waitUntil: ExecutionContext["waitUntil"],
 ): RequestStorefrontClient {
-  const sharedId = env.SHARED_CART_STOREFRONT_ID;
-  const sharedToken = env.SHARED_CART_PRIVATE_STOREFRONT_API_TOKEN;
+  const sharedId = env.SHARED_CART_STOREFRONT_ID?.trim().replace(/^['"]|['"]$/g, "");
+  const sharedToken = env.SHARED_CART_PRIVATE_STOREFRONT_API_TOKEN?.trim().replace(/^['"]|['"]$/g, "");
   if (!sharedId || !sharedToken || shouldUseMockShop(env)) {
     return createRequestStorefrontClient(request, env, cache, waitUntil);
   }
