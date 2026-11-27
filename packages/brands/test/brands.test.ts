@@ -32,4 +32,9 @@ describe("brand config", () => {
     expect(origins["laroche-posay"]).toBe("https://local.tryhydrogen.dev:5173");
     expect(origins.kerastase).toBe("https://127.0.0.1:5174");
   });
+
+  it("reads PUBLIC_HOME_URL for the House site", () => {
+    const origins = brandOrigins({ PUBLIC_HOME_URL: "https://house.example.com" });
+    expect(origins.house).toBe("https://house.example.com");
+  });
 });

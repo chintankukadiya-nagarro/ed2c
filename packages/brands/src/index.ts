@@ -12,7 +12,7 @@ export type Brand = {
   tagline: string;
   announcement: string;
   /** Env variable holding the deployed origin, for example https://lrp.example.com. */
-  originEnv: "PUBLIC_HOUSE_URL" | "PUBLIC_LA_ROCHE_POSAY_URL" | "PUBLIC_KERASTASE_URL";
+  originEnv: "PUBLIC_HOME_URL" | "PUBLIC_LA_ROCHE_POSAY_URL" | "PUBLIC_KERASTASE_URL";
   /** Local dev origin. Each site needs its own host, because cookies ignore the port. */
   localOrigin: string;
 };
@@ -28,7 +28,7 @@ export const BRANDS: Record<BrandKey, Brand> = {
     collectionHandles: ["la-roche-posay", "kerastase"],
     tagline: "Every L'Oréal brand, one bag and one checkout.",
     announcement: "One bag across every brand. Free delivery over Rs. 999.",
-    originEnv: "PUBLIC_HOUSE_URL",
+    originEnv: "PUBLIC_HOME_URL",
     localOrigin: "https://127.0.0.2:5175",
   },
   "laroche-posay": {

@@ -16,7 +16,7 @@ export type Env = {
   SHOP_ID?: string;
   /** Shared by all three sites. Signs the links that move a shopper between them. */
   HANDOFF_SECRET?: string;
-  PUBLIC_HOUSE_URL?: string;
+  PUBLIC_HOME_URL?: string;
   PUBLIC_LA_ROCHE_POSAY_URL?: string;
   PUBLIC_KERASTASE_URL?: string;
 };
