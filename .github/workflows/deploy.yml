@@ -32,6 +32,7 @@ jobs:
 
       - name: Deploy ${{ matrix.brand }} to Oxygen
         working-directory: apps/storefront
-        run: npx shopify hydrogen deploy
+        run: npx shopify hydrogen deploy --assets-dir dist/client --worker-dir dist/server
         env:
           SHOPIFY_HYDROGEN_DEPLOYMENT_TOKEN: ${{ secrets[matrix.token] }}
+          BRAND_KEY: ${{ matrix.brand }}
