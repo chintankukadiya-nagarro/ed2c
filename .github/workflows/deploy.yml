@@ -1,0 +1,37 @@
+name: Deploy storefronts
+on: [push]
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy ${{ matrix.brand }}
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - brand: house
+            token: OXYGEN_DEPLOYMENT_TOKEN_1000186105
+          - brand: laroche-posay
+            token: OXYGEN_DEPLOYMENT_TOKEN_1000186028
+          - brand: kerastase
+            token: OXYGEN_DEPLOYMENT_TOKEN_1000186034
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      - name: Deploy ${{ matrix.brand }} to Oxygen
+        working-directory: apps/storefront
+        run: npx shopify hydrogen deploy
+        env:
+          SHOPIFY_HYDROGEN_DEPLOYMENT_TOKEN: ${{ secrets[matrix.token] }}
