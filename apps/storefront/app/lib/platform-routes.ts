@@ -1,12 +1,4 @@
-import {
-  BRANDS,
-  isBrandKey,
-  isLocalDemoOrigin,
-  undeployedOriginEnv,
-  type Brand,
-  type BrandKey,
-  type BrandOrigins,
-} from "@ed2c/brands";
+import { isBrandKey, undeployedOriginEnv, type Brand, type BrandKey, type BrandOrigins } from "@ed2c/brands";
 import {
   createHandoffToken,
   createLogoutHop,
@@ -68,14 +60,6 @@ async function switchBrand(context: PlatformContext, target: string, url: URL) {
   if (!isBrandKey(target)) return new Response("Not Found", { status: 404 });
   const to = safeReturnPath(url.searchParams.get("to"));
   if (target === brand.key) return redirect(to);
-
-  const missing = undeployedOriginEnv(env, target);
-  if (missing && !isLocalDemoOrigin(url.origin)) {
-    return new Response(
-      `${BRANDS[target].name} still points at a local URL. Set ${missing} to that brand’s live https://….o2.myshopify.dev origin on all three Hydrogen storefronts, then Redeploy.`,
-      { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } },
-    );
-  }
 
   const secret = requireSecret(env);
   const token = await createHandoffToken(

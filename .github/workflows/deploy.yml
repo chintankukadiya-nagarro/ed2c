@@ -30,38 +30,9 @@ jobs:
 
       - run: npm ci
 
-      - name: Write Oxygen env overrides
-        working-directory: apps/storefront
-        env:
-          BRAND_KEY: ${{ matrix.brand }}
-          SHARED_CART_STOREFRONT_ID: "1000186105"
-          SHARED_CART_PRIVATE_STOREFRONT_API_TOKEN: ${{ secrets.SHARED_CART_PRIVATE_STOREFRONT_API_TOKEN }}
-          HANDOFF_SECRET: ${{ secrets.HANDOFF_SECRET }}
-          PUBLIC_HOME_URL: ${{ vars.PUBLIC_HOME_URL }}
-          PUBLIC_LA_ROCHE_POSAY_URL: ${{ vars.PUBLIC_LA_ROCHE_POSAY_URL }}
-          PUBLIC_KERASTASE_URL: ${{ vars.PUBLIC_KERASTASE_URL }}
-        run: |
-          node --input-type=module -e '
-            import fs from "node:fs";
-            const keys = [
-              "BRAND_KEY",
-              "SHARED_CART_STOREFRONT_ID",
-              "SHARED_CART_PRIVATE_STOREFRONT_API_TOKEN",
-              "HANDOFF_SECRET",
-              "PUBLIC_HOME_URL",
-              "PUBLIC_LA_ROCHE_POSAY_URL",
-              "PUBLIC_KERASTASE_URL",
-            ];
-            const lines = keys.flatMap((key) => {
-              const value = process.env[key]?.trim() ?? "";
-              return value ? [`${key}=${value}`] : [];
-            });
-            fs.writeFileSync(".env.deploy", `${lines.join("\n")}\n`);
-          '
-
       - name: Deploy ${{ matrix.brand }} to Oxygen
         working-directory: apps/storefront
-        run: npx shopify hydrogen deploy --assets-dir dist/client --worker-dir dist/server --env-file .env.deploy
+        run: npx shopify hydrogen deploy --assets-dir dist/client --worker-dir dist/server
         env:
           SHOPIFY_HYDROGEN_DEPLOYMENT_TOKEN: ${{ secrets[matrix.token] }}
           BRAND_KEY: ${{ matrix.brand }}
