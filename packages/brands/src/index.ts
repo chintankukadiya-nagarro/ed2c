@@ -78,6 +78,26 @@ export function brandOrigins(env: OriginEnv = {}): BrandOrigins {
   return origins;
 }
 
+/** True for MiniOxygen / loopback hosts used only in local demo. */
+export function isLocalDemoOrigin(origin: string): boolean {
+  try {
+    const { hostname } = new URL(origin);
+    return (
+      hostname === "localhost" ||
+      hostname.endsWith(".localhost") ||
+      hostname === "local.tryhydrogen.dev" ||
+      hostname.startsWith("127.")
+    );
+  } catch {
+    return true;
+  }
+}
+
+/** Env var to set when a brand origin is still the local fallback. */
+export function undeployedOriginEnv(env: OriginEnv, key: BrandKey): Brand["originEnv"] | null {
+  return isLocalDemoOrigin(brandOrigins(env)[key]) ? BRANDS[key].originEnv : null;
+}
+
 /** The brand that owns an origin, or null for an origin outside the platform. */
 export function brandForOrigin(origin: string, origins: BrandOrigins): BrandKey | null {
   return BRAND_KEYS.find((key) => origins[key] === origin) ?? null;

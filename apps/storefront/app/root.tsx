@@ -28,6 +28,7 @@ import { CartProvider } from "~/lib/cart";
 import { cartLoaderContext, guestCartHandlers } from "~/lib/cart-handlers";
 import { createRequestCustomerAccount, customerAccountContext } from "~/lib/customer-account";
 import { envContext } from "~/lib/env";
+import { sharedCartIdentity } from "~/lib/shared-cart";
 import { endSilentSignIn, handlePlatformRoute } from "~/lib/platform-routes";
 import { createPredictiveSearchHandlers } from "~/lib/predictive-search-handlers";
 import { loadRootLayout } from "~/lib/root-layout";
@@ -136,6 +137,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   return {
     brand,
     origins: brandOrigins(env),
+    sharedCart: sharedCartIdentity(env) !== null,
     signedIn,
     cartData: cart.data,
     shopInfo: layout.shopInfo,
@@ -166,7 +168,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const rootData = useRouteLoaderData<typeof loader>("root");
 
   return (
-    <html lang="en" data-brand={rootData?.brand.key}>
+    <html lang="en" data-brand={rootData?.brand.key} data-cart-scope={rootData?.sharedCart ? "shared" : "brand"}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

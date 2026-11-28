@@ -1,8 +1,18 @@
-import { isBrandKey, type Brand, type BrandOrigins } from "@ed2c/brands";
+import {
+  BRANDS,
+  isBrandKey,
+  isLocalDemoOrigin,
+  undeployedOriginEnv,
+  type Brand,
+  type BrandKey,
+  type BrandOrigins,
+} from "@ed2c/brands";
 import {
   createHandoffToken,
   createLogoutHop,
+  handoffUrl,
   logoutRoute,
+  readHandoffToken,
   safeReturnPath,
   verifyHandoffToken,
   verifyLogoutHop,
@@ -11,6 +21,7 @@ import { createCartCookie, type ShopifyRequestContext } from "@shopify/hydrogen"
 import type { CustomerSession, WritableCustomerSessionManager } from "@shopify/hydrogen/customer-account";
 
 import type { Env } from "~/lib/env";
+import { sharedCartIdentity } from "~/lib/shared-cart";
 
 const SILENT_COOKIE = "ed2c_silent";
 const SILENT_MAX_AGE_SECONDS = 300;
@@ -38,7 +49,8 @@ export async function handlePlatformRoute(context: PlatformContext): Promise<Res
   const go = /^\/go\/([a-z-]+)$/.exec(url.pathname);
 
   if (go && method === "GET") return switchBrand(context, go[1]!, url);
-  if (url.pathname === "/handoff" && method === "GET") return acceptHandoff(context, url);
+  if (method === "GET" && url.pathname === "/__ed2c/status") return status(context, url);
+  if (method === "GET" && /^\/handoff(?:\/[^/]+)?$/.test(url.pathname)) return acceptHandoff(context, url);
   if (url.pathname === "/account/silent" && method === "GET") return silentSignIn(context, url);
   if (url.pathname === "/account/authorize" && method === "GET") return silentCallbackFallback(context, url);
   if (url.pathname === "/account/logout-everywhere" && method === "POST") return startLogout(context, url);
@@ -57,6 +69,14 @@ async function switchBrand(context: PlatformContext, target: string, url: URL) {
   const to = safeReturnPath(url.searchParams.get("to"));
   if (target === brand.key) return redirect(to);
 
+  const missing = undeployedOriginEnv(env, target);
+  if (missing && !isLocalDemoOrigin(url.origin)) {
+    return new Response(
+      `${BRANDS[target].name} still points at a local URL. Set ${missing} to that brand’s live https://….o2.myshopify.dev origin on all three Hydrogen storefronts, then Redeploy.`,
+      { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } },
+    );
+  }
+
   const secret = requireSecret(env);
   const token = await createHandoffToken(
     {
@@ -68,11 +88,27 @@ async function switchBrand(context: PlatformContext, target: string, url: URL) {
     },
     secret,
   );
-  return redirect(`${origins[target]}/handoff?t=${encodeURIComponent(token)}`);
+  return redirect(handoffUrl(origins[target], token));
+}
+
+function status(context: PlatformContext, url: URL): Response {
+  const { env, brand, origins } = context;
+  const keys: BrandKey[] = ["house", "laroche-posay", "kerastase"];
+  return Response.json(
+    {
+      brand: brand.key,
+      origin: url.origin,
+      sharedCart: sharedCartIdentity(env) !== null,
+      handoffSecret: Boolean(env.HANDOFF_SECRET?.trim()),
+      origins,
+      localOriginFallback: Object.fromEntries(keys.map((key) => [key, Boolean(undeployedOriginEnv(env, key))])),
+    },
+    { headers: { "cache-control": "no-store" } },
+  );
 }
 
 async function acceptHandoff(context: PlatformContext, url: URL) {
-  const result = await verifyHandoffToken(url.searchParams.get("t") ?? "", {
+  const result = await verifyHandoffToken(readHandoffToken(url), {
     secret: requireSecret(context.env),
     audience: context.brand.key,
     consumeNonce,
@@ -171,11 +207,15 @@ async function isSignedIn(context: PlatformContext): Promise<boolean> {
  * not atomic, which is enough for 60-second redirect tokens in this demo.
  */
 async function consumeNonce(nonce: string, ttlSeconds: number): Promise<boolean> {
-  const cache = await caches.open("ed2c-handoff");
-  const key = new Request(`https://handoff.invalid/${encodeURIComponent(nonce)}`);
-  if (await cache.match(key)) return true;
-  await cache.put(key, new Response("1", { headers: { "cache-control": `public, max-age=${ttlSeconds}` } }));
-  return false;
+  try {
+    const cache = await caches.open("ed2c-handoff");
+    const key = new Request(`https://handoff.invalid/${encodeURIComponent(nonce)}`);
+    if (await cache.match(key)) return true;
+    await cache.put(key, new Response("1", { headers: { "cache-control": `public, max-age=${ttlSeconds}` } }));
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function requireSecret(env: Env): string {

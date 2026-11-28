@@ -5,7 +5,9 @@ import {
   brandForVendor,
   brandOrigins,
   getBrand,
+  isLocalDemoOrigin,
   sellsVendor,
+  undeployedOriginEnv,
 } from "../src";
 
 describe("brand config", () => {
@@ -36,5 +38,18 @@ describe("brand config", () => {
   it("reads PUBLIC_HOME_URL for the House site", () => {
     const origins = brandOrigins({ PUBLIC_HOME_URL: "https://house.example.com" });
     expect(origins.house).toBe("https://house.example.com");
+  });
+
+  it("treats loopback and MiniOxygen hosts as local demo origins", () => {
+    expect(isLocalDemoOrigin("https://127.0.0.1:5174")).toBe(true);
+    expect(isLocalDemoOrigin("https://local.tryhydrogen.dev:5173")).toBe(true);
+    expect(isLocalDemoOrigin("https://laroche-posay.o2.myshopify.dev")).toBe(false);
+  });
+
+  it("names the env var still pointing at a local origin", () => {
+    expect(undeployedOriginEnv({}, "kerastase")).toBe("PUBLIC_KERASTASE_URL");
+    expect(
+      undeployedOriginEnv({ PUBLIC_KERASTASE_URL: "https://kerastase.o2.myshopify.dev" }, "kerastase"),
+    ).toBeNull();
   });
 });

@@ -4,7 +4,9 @@ import {
   HANDOFF_TTL_SECONDS,
   createHandoffToken,
   createLogoutHop,
+  handoffUrl,
   logoutRoute,
+  readHandoffToken,
   safeReturnPath,
   verifyHandoffToken,
   verifyLogoutHop,
@@ -101,6 +103,23 @@ describe("handoff token", () => {
     );
     const result = await verifyHandoffToken(token, { secret: SECRET, audience: "kerastase", consumeNonce: nonceStore() });
     expect(result.ok && result.claims.to).toBe("/");
+  });
+});
+
+describe("handoff URL", () => {
+  it("puts the token in the path so Oxygen login cannot drop ?t=", async () => {
+    const token = await createHandoffToken(
+      { iss: "laroche-posay", aud: "kerastase", cart: CART, signedIn: false, to: "/cart" },
+      SECRET,
+    );
+    const url = handoffUrl("https://kerastase.example.com", token);
+    expect(url.startsWith("https://kerastase.example.com/handoff/")).toBe(true);
+    expect(url).not.toContain("?t=");
+    expect(readHandoffToken(new URL(url))).toBe(token);
+  });
+
+  it("still reads a query-string token from older links", () => {
+    expect(readHandoffToken(new URL("https://house.example.com/handoff?t=abc.def"))).toBe("abc.def");
   });
 });
 

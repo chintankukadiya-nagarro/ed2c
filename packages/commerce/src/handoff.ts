@@ -30,6 +30,24 @@ export type HandoffClaims = {
 
 export type HandoffInput = Pick<HandoffClaims, "iss" | "aud" | "cart" | "signedIn" | "to">;
 
+/** Path-based so Oxygen’s staff login cannot strip `?t=` on a new host. */
+export function handoffUrl(origin: string, token: string): string {
+  return `${origin}/handoff/${encodeURIComponent(token)}`;
+}
+
+export function readHandoffToken(url: URL): string {
+  const fromPath = /^\/handoff\/([^/]+)$/.exec(url.pathname);
+  if (fromPath?.[1]) {
+    try {
+      return decodeURIComponent(fromPath[1]);
+    } catch {
+      return "";
+    }
+  }
+  if (url.pathname === "/handoff") return url.searchParams.get("t") ?? "";
+  return "";
+}
+
 export async function createHandoffToken(
   input: HandoffInput,
   secret: string,

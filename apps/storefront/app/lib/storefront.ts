@@ -9,6 +9,7 @@ import {
 import { createContext } from "react-router";
 
 import type { Env } from "~/lib/env";
+import { sharedCartIdentity } from "~/lib/shared-cart";
 import {
   getBuyerIp,
   getMockShopDomain,
@@ -66,9 +67,8 @@ export function createCartStorefrontClient(
   cache: CacheInstance,
   waitUntil: ExecutionContext["waitUntil"],
 ): RequestStorefrontClient {
-  const sharedId = env.SHARED_CART_STOREFRONT_ID?.trim().replace(/^['"]|['"]$/g, "");
-  const sharedToken = env.SHARED_CART_PRIVATE_STOREFRONT_API_TOKEN?.trim().replace(/^['"]|['"]$/g, "");
-  if (!sharedId || !sharedToken || shouldUseMockShop(env)) {
+  const shared = sharedCartIdentity(env);
+  if (!shared || shouldUseMockShop(env)) {
     return createRequestStorefrontClient(request, env, cache, waitUntil);
   }
 
@@ -82,8 +82,8 @@ export function createCartStorefrontClient(
     }),
     config: {
       storeDomain: getStoreDomain(env),
-      privateStorefrontToken: sharedToken,
-      storefrontId: sharedId,
+      privateStorefrontToken: shared.token,
+      storefrontId: shared.storefrontId,
       cache,
       waitUntil,
     },
